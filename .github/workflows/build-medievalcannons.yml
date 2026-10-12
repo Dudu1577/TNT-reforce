@@ -1,0 +1,59 @@
+name: Build MedievalCannons JAR
+
+on:
+workflow_dispatch:
+push:
+paths:
+- '**.zip'
+- '.github/workflows/build-medievalcannons.yml'
+
+permissions:
+contents: read
+
+jobs:
+build:
+runs-on: ubuntu-latest
+steps:
+- name: Checkout repository
+uses: actions/checkout@v4
+
+  - name: Extract MedievalCannons ZIP
+    run: |
+      ZIP_FILE=$(find . -maxdepth 2 -type f -iname '*MedievalCannons*.zip' -print -quit)
+      if [ -z "$ZIP_FILE" ]; then
+        ZIP_FILE=$(find . -maxdepth 2 -type f -iname '*.zip' -print -quit)
+      fi
+      if [ -z "$ZIP_FILE" ]; then
+        echo "Nenhum arquivo ZIP encontrado"
+        exit 1
+      fi
+      mkdir extracted
+      unzip -q "$ZIP_FILE" -d extracted
+      BUILD_FILE=$(find extracted -type f -name build.gradle.kts -print -quit)
+      if [ -z "$BUILD_FILE" ]; then
+        echo "Arquivo build.gradle.kts não encontrado no ZIP"
+        exit 1
+      fi
+      echo "PROJECT_DIR=$(dirname "$BUILD_FILE")" >> "$GITHUB_ENV"
+
+  - name: Set up Java 25
+    uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: '25'
+
+  - name: Set up Gradle
+    uses: gradle/actions/setup-gradle@v4
+    with:
+      gradle-version: '9.1.0'
+
+  - name: Build plugin
+    run: gradle --no-daemon clean build
+    working-directory: ${{ env.PROJECT_DIR }}
+
+  - name: Upload JAR
+    uses: actions/upload-artifact@v4
+    with:
+      name: MedievalCannons-JAR
+      path: ${{ env.PROJECT_DIR }}/build/libs/*.jar
+      if-no-files-found: error
