@@ -25,11 +25,11 @@ jobs:
           BUILD_FILE=$(find extracted -type f -name build.gradle -print -quit)
           if [ -z "$BUILD_FILE" ]; then echo 'build.gradle not found inside ZIP'; exit 1; fi
           echo "PROJECT_DIR=$(dirname "$BUILD_FILE")" >> "$GITHUB_ENV"
-      - name: Set up Java 25
+      - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '25'
+          java-version: '21'
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
